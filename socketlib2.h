@@ -42,6 +42,11 @@ SOCKETLIB2_API bool __stdcall connect(SOCKETLIB_HANDLE handle, unsigned char* ad
 SOCKETLIB2_API SOCKETLIB_HANDLE __stdcall accept(SOCKETLIB_HANDLE sock);
 SOCKETLIB2_API bool __stdcall poll_accept(SOCKETLIB_HANDLE task_handle, int wait_for_ms, SOCKETLIB_HANDLE& client_socket, unsigned char* client_addr_buf, unsigned int client_addr_buf_size, unsigned short& client_port, int& error);
 
+SOCKETLIB2_API SOCKETLIB_HANDLE __stdcall create_accept_process(SOCKETLIB_HANDLE socket);
+SOCKETLIB2_API void __stdcall delete_accept(SOCKETLIB_HANDLE accept_handle);
+SOCKETLIB2_API bool __stdcall poll_accept(SOCKETLIB_HANDLE accept_handle, int wait_for, bool restart);
+SOCKETLIB2_API bool __stdcall get_accept_result(SOCKETLIB_HANDLE accept_handle, SOCKETLIB_HANDLE& client_sock, unsigned char* addr_buf, unsigned int addr_buf_size, unsigned short& port, int& error);
+
 SOCKETLIB2_API SOCKETLIB_HANDLE __stdcall send(SOCKETLIB_HANDLE sock, unsigned char* msg, int len);
 SOCKETLIB2_API bool __stdcall poll_send(SOCKETLIB_HANDLE task_handle, int wait_for_ms);
 SOCKETLIB2_API bool __stdcall finish_send(SOCKETLIB_HANDLE task_handle, int& error);
@@ -57,6 +62,7 @@ SOCKETLIB2_API void __stdcall send_msg(SOCKETLIB_HANDLE queue_handle, unsigned c
 
 SOCKETLIB2_API SOCKETLIB_HANDLE __stdcall create_receive_buffer(SOCKETLIB_HANDLE sock, unsigned int size);
 SOCKETLIB2_API void __stdcall delete_receive_buffer(SOCKETLIB_HANDLE buffer);
-SOCKETLIB2_API bool __stdcall poll_msg(SOCKETLIB_HANDLE buffer, int wait_ms, unsigned char* msg_buf, int buf_size, int& err);
+SOCKETLIB2_API bool __stdcall poll_msg(SOCKETLIB_HANDLE buffer, int wait_ms, bool restart);
+SOCKETLIB2_API bool __stdcall get_msg(SOCKETLIB_HANDLE buffer, unsigned char* msg_buf, int buf_size, int& err);
 
 #endif //SOCKETLIB2_SOCKETLIB2_H

@@ -55,6 +55,12 @@ public:
     }
 };
 
+struct msg_result {
+    string msg;
+    bool success{};
+    int error{};
+};
+
 class msg_buffer {
     char* buffer;
     int buffer_size;
@@ -63,8 +69,9 @@ class msg_buffer {
     char* buffer_pos;
     SOCKET sock;
     bool connected;
-    future<string> msg_future;
+    future<msg_result> msg_future;
     bool future_in_progress;
+    msg_result res;
 public:
     msg_buffer(SOCKET sock, unsigned int size) : future_in_progress(false), sock(sock), buffer_size(size), connected(true) {
         buffer = new char[size];
@@ -79,7 +86,7 @@ public:
     }
 private:
     //TODO: add error
-    bool get_char(char* ch) {
+    bool get_char(char* ch, int& error) {
         if (buffer_pos == buffer_end) {
             int ret = recv(sock, buffer, buffer_size, 0);
             if (ret == 0) {
@@ -87,7 +94,9 @@ private:
                 return false;
             }
             if (ret == SOCKET_ERROR) {
-                cout << "socket error: " << WSAGetLastError() << endl;
+                error = WSAGetLastError();
+                //TODO: add specific errors for disconnection
+                cout << "socket error: " << error << endl;
                 connected = false;
                 return false;
             }
@@ -108,48 +117,46 @@ public:
     bool is_connected() {
         return connected;
     }
-    string get_msg()  {
+    msg_result get_msg()  {
         stringstream ss;
         char ch;
-        bool success;
-        while ((success = get_char(&ch)) && ch != 0) {
+        msg_result res{};
+        while ((res.success = get_char(&ch,res.error)) && ch != 0) {
             cout << "received char: " << ch << endl;
             ss << ch;
         }
-        if (success) {
-            return ss.str();
+        if (res.success) {
+            res.msg = ss.str();
         }
-        else {
-            return string();
-        }
+        return res;
     }
-    bool poll_msg(string& str, int wait_for, bool restart = true) {
+    bool poll_msg(int wait_for, bool restart = true) {
         if (!this->is_connected()) return false;
         bool start_task = false;
         if (!future_in_progress) {
             cout << "starting recv task" << endl;
-            msg_future = async(launch::async, [&] {
-                string str = this->get_msg();
-                cout << "received string: " << str;
-                return str;
-            });
+            msg_future = async(launch::async, &msg_buffer::get_msg, this);
             future_in_progress = true;
         }
         if (msg_future.wait_for(std::chrono::milliseconds(wait_for)) == future_status::ready) {
-            str = msg_future.get();
+            res = msg_future.get();
             if (restart) {
                 cout << "restarting recv task" << endl;
-                msg_future = async(launch::async, [&] {
-                    string str = this->get_msg();
-                    cout << "received string: " << str;
-                    return str;
-                });
+                msg_future = async(launch::async, &msg_buffer::get_msg, this);
             } else {
                 future_in_progress = false;
             }
             return true;
         }
         return false;
+    }
+    bool get_last_result(string& str, int& error) {
+        if (res.success) {
+            str = res.msg;
+        } else {
+            error = res.error;
+        }
+        return res.success;
     }
 
 };

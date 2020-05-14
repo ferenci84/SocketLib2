@@ -24,6 +24,7 @@ bool send_msg_sync(SOCKET sock, const char* msg, int len, int& error) {
     int remainsize = (int)size;
     while (remainsize > 0) {
         int ret = send(sock, bufptr, remainsize, 0);
+        cout << "sent bytes: " << ret << endl;
         if (ret == SOCKET_ERROR) {
             error = WSAGetLastError();
             return false;
@@ -93,6 +94,8 @@ private:
         if (!succ){
             cout << "Message sending error: " << err;
             lasterror = err;
+        } else {
+            cout << "sent msg: " << buffer << endl;
         }
         buffer_pos = 0;
         return succ;
@@ -122,6 +125,7 @@ public:
         if (msgs.size() >= max_size) return false;
         msgs.push_back(msg);
         th = std::make_shared<thread>(&send_queue::send_msg_proc,this,th);
+        return true;
     }
     int get_last_error() {
         return this->lasterror;

@@ -41,10 +41,16 @@ SOCKETLIB2_API void __stdcall delete_receive_buffer(SOCKETLIB_HANDLE buffer) {
     delete recv_buf;
 }
 
-SOCKETLIB2_API bool __stdcall poll_msg(SOCKETLIB_HANDLE buffer, int wait_ms, unsigned char* msg_buf, int buf_size, int& err) {
+SOCKETLIB2_API bool __stdcall poll_msg(SOCKETLIB_HANDLE buffer, int wait_ms, bool restart) {
+    auto recv_buf = (msg_buffer*)buffer;
+    return recv_buf->poll_msg(wait_ms,restart);
+}
+
+
+SOCKETLIB2_API bool __stdcall get_msg(SOCKETLIB_HANDLE buffer, unsigned char* msg_buf, int buf_size, int& err) {
     auto recv_buf = (msg_buffer*)buffer;
     string msg;
-    if (recv_buf->poll_msg(msg,wait_ms)) {
+    if (recv_buf->get_last_result(msg,err)){
         if (buf_size < msg.size()+1) {
             cout << "buffer size is too small" << endl;
             return false;
@@ -53,6 +59,7 @@ SOCKETLIB2_API bool __stdcall poll_msg(SOCKETLIB_HANDLE buffer, int wait_ms, uns
             return true;
         }
     } else {
+        if (buf_size > 0) *msg_buf = 0;
         return false;
     }
 }

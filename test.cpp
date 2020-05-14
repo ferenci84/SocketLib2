@@ -47,23 +47,39 @@ int main() {
         SOCKETLIB_HANDLE recv_buf = create_receive_buffer(client,64);
         char buf[1024];
         int err;
-        if (poll_msg(recv_buf,1000,(unsigned char*)buf,1024,err)) {
-            cout << "message: " << buf << endl;
+        if (poll_msg(recv_buf,1000,true)) {
+            if (get_msg(recv_buf,(unsigned char*)buf,1024,err)) {
+                cout << "message: " << buf << endl;
+            } else {
+                cout << "error: " << err << endl;
+            }
         } else {
             cout << "not received anything" << endl;
         }
-        if (poll_msg(recv_buf,1000,(unsigned char*)buf,1024,err)) {
-            cout << "message: " << buf << endl;
+        if (poll_msg(recv_buf,1000,true)) {
+            if (get_msg(recv_buf,(unsigned char*)buf,1024,err)) {
+                cout << "message: " << buf << endl;
+            } else {
+                cout << "error: " << err << endl;
+            }
         } else {
             cout << "not received anything" << endl;
         }
-        if (poll_msg(recv_buf,1000,(unsigned char*)buf,1024,err)) {
-            cout << "message: " << buf << endl;
+        if (poll_msg(recv_buf,1000,true)) {
+            if (get_msg(recv_buf,(unsigned char*)buf,1024,err)) {
+                cout << "message: " << buf << endl;
+            } else {
+                cout << "error: " << err << endl;
+            }
         } else {
             cout << "not received anything" << endl;
         }
-        if (poll_msg(recv_buf,1000,(unsigned char*)buf,1024,err)) {
-            cout << "message: " << buf << endl;
+        if (poll_msg(recv_buf,1000,true)) {
+            if (get_msg(recv_buf,(unsigned char*)buf,1024,err)) {
+                cout << "message: " << buf << endl;
+            } else {
+                cout << "error: " << err << endl;
+            }
         } else {
             cout << "not received anything" << endl;
         }
@@ -71,8 +87,14 @@ int main() {
         this_thread::sleep_for(chrono::milliseconds(1000));
         cout << "client disconnects" << endl;
         disconnect_socket_and_forget(client);
-        if (poll_msg(recv_buf,100,(unsigned char*)buf,1024,err)) {
-            cout << "message: " << buf << endl;
+        if (poll_msg(recv_buf,1000,true)) {
+            if (get_msg(recv_buf,(unsigned char*)buf,1024,err)) {
+                cout << "message: " << buf << endl;
+            } else {
+                cout << "error: " << err << endl;
+            }
+        } else {
+            cout << "not received anything" << endl;
         }
         delete_receive_buffer(recv_buf);
 
@@ -91,15 +113,15 @@ int main() {
 
     });
 
-    SOCKETLIB_HANDLE accept_task = accept(socket);
+    SOCKETLIB_HANDLE accept_process = create_accept_process(socket);
     SOCKETLIB_HANDLE s_client_socket;
     char client_addr[1024];
     unsigned short client_port;
     int error;
-    while (!poll_accept(accept_task,100,s_client_socket,(unsigned char*)&client_addr, 1024,client_port,error)) {
+    while (!poll_accept(accept_process,100,false)) {
         cout << "waiting for connection" << endl;
     }
-    if (s_client_socket != 0) {
+    if (get_accept_result(accept_process,s_client_socket,(unsigned char*)client_addr,1024,client_port,error)) {
         cout << "client connected: " << " socket: " << s_client_socket << endl;
         cout << "address: " << client_addr << endl;
         cout << "port: " << client_port << endl;
@@ -107,12 +129,19 @@ int main() {
         auto queue = create_send_queue(s_client_socket,10,64);
         send_msg(queue,(unsigned char*)"IAMTHESERVER");
         send_msg(queue,(unsigned char*)"IAMTHESERVER");
+
+        this_thread::sleep_for(chrono::milliseconds(5000));
+
+        send_msg(queue,(unsigned char*)"IAMTHESERVER");
+
+
+        cout << "server disconnects" << endl;
+        disconnect_socket_and_forget(socket);
+
         delete_send_queue(queue);
 
     }
 
-    this_thread::sleep_for(chrono::milliseconds(5000));
-    cout << "server disconnects" << endl;
     disconnect_socket_and_forget(socket);
     if (client_thread.joinable()) client_thread.join();
 
