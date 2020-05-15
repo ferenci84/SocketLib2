@@ -48,7 +48,10 @@ public:
     bool is_connected() {return connected;}
     ~accept_connections() {
         if (future_in_progress) {
-            accept_future.get();
+            if (accept_future.wait_for(std::chrono::milliseconds(1000)) != future_status::ready) {
+                cout << "abandoning accept process" << endl;
+                accept_future._Abandon();
+            }
         }
     }
 private:

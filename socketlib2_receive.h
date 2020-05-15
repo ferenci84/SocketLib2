@@ -12,49 +12,6 @@
 
 using namespace std;
 
-//INTERNAL
-bool receive_msg_sync(SOCKET sock, char* buf, int buffer_size, int& bytes, bool& disconnected, int& error) {
-    int ret = recv(sock, buf, buffer_size, 0);
-    if (ret == SOCKET_ERROR) {
-        error = WSAGetLastError();
-        bytes = -1;
-        return false;
-    }
-    if (ret == 0) {
-        disconnected = true;
-        bytes = 0;
-        return false;
-    }
-    disconnected = false;
-    bytes = ret;
-    return true;
-}
-
-//INTERNAL
-struct receive_task_result {
-    bool success;
-    bool disconnected;
-    int bytes_received;
-    int error;
-};
-
-//INTERNAL
-class receive_task {
-private:
-    future<receive_task_result> task;
-public:
-    explicit receive_task(SOCKETLIB_HANDLE sock, char* buf, int buffer_size) {
-        task = async(launch::async, [&](SOCKETLIB_HANDLE sock, char* buf, int buffer_size) {
-            receive_task_result res{};
-            res.success = receive_msg_sync(sock,buf,buffer_size,res.bytes_received,res.disconnected,res.error);
-            return res;
-        },sock, buf, buffer_size);
-    }
-    future<receive_task_result>* get_task() {
-        return &task;
-    }
-};
-
 struct msg_result {
     string msg;
     bool success{};

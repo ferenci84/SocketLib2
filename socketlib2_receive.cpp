@@ -5,38 +5,25 @@
 
 #include "socketlib2.h"
 #include "socketlib2_receive.h"
+#include "socketlib2_manage_resources.h"
 #include <iostream>
 #include <future>
 #include <list>
 
 using namespace std;
 
-SOCKETLIB2_API SOCKETLIB_HANDLE __stdcall receive(SOCKETLIB_HANDLE sock, unsigned char* buf, int buffer_size) {
-    auto task = new receive_task(sock,(char*)buf,buffer_size);
-    return (SOCKETLIB_HANDLE)task;
-}
-
-SOCKETLIB2_API bool __stdcall poll_receive(SOCKETLIB_HANDLE task_handle, int wait_for_ms) {
-    auto task = (receive_task*)task_handle;
-    future<receive_task_result>* task_future = task->get_task();
-    return task_future->wait_for(chrono::milliseconds(wait_for_ms)) == future_status::ready;
-}
-
-SOCKETLIB2_API int __stdcall finish_receive(SOCKETLIB_HANDLE task_handle, int& error) {
-    auto task = (receive_task*)task_handle;
-    future<receive_task_result>* task_future = task->get_task();
-    auto result = task_future->get();
-    delete task;
-    error = result.error;
-    return result.bytes_received;
-}
-
 SOCKETLIB2_API SOCKETLIB_HANDLE __stdcall create_receive_buffer(SOCKETLIB_HANDLE sock, unsigned int size) {
-    auto recv_buf = new msg_buffer(sock,size);
-    return (SOCKETLIB_HANDLE)recv_buf;
+    auto handle = retrieve_receive_buffer(sock);
+    if (handle == 0){
+        handle = (SOCKETLIB_HANDLE)(new msg_buffer(sock,size));
+        add_receive_buffer(sock, handle);
+    }
+    return handle;
 }
 
 SOCKETLIB2_API void __stdcall delete_receive_buffer(SOCKETLIB_HANDLE buffer) {
+    if (!receive_buffer_exists(buffer)) return;
+    remove_receive_buffer(buffer);
     auto recv_buf = (msg_buffer*)buffer;
     delete recv_buf;
 }

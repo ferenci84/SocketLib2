@@ -35,29 +35,6 @@ bool send_msg_sync(SOCKET sock, const char* msg, int len, int& error) {
     return true;
 }
 
-//INTERNAL
-struct send_task_result {
-    bool success;
-    int error;
-};
-
-//INTERNAL
-class send_task {
-private:
-    future<send_task_result> task;
-public:
-    explicit send_task(SOCKETLIB_HANDLE sock, char* msg, int len) {
-        task = async(launch::async, [&](SOCKETLIB_HANDLE sock, char* msg, int len) {
-            send_task_result res{};
-            res.success = send_msg_sync(sock,msg,len,res.error);
-            return res;
-        },sock, msg, len);
-    }
-    future<send_task_result>* get_task() {
-        return &task;
-    }
-};
-
 class send_queue {
 private:
     SOCKET sock;

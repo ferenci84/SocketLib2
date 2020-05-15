@@ -14,27 +14,14 @@ SOCKETLIB_HANDLE open_socket(const string& addr, int port, int queue_size);
 SOCKETLIB_HANDLE connect_to_server(const string& addr, int port);
 bool poll_send(SOCKETLIB_HANDLE send_task, int wait, bool& success);
 
-class wsa {
-public:
-    wsa() {
-        int err;
-        wsa_startup(err);
-    }
-    ~wsa() {
-        int err;
-        wsa_cleanup(err);
-    }
-};
-
 int main() {
     cout << sizeof(SOCKET) << endl;
     cout << sizeof(SOCKETLIB_HANDLE) << endl;
     cout << sizeof(void*) << endl;
     cout << sizeof(int) << endl;
-    wsa wsa;
     int err;
     SOCKETLIB_HANDLE socket;
-    socket = open_socket("127.0.0.1",6111,10);
+    socket = create_server((unsigned char*)"127.0.0.1",6111,10,err);
     if (socket == 0) {
         cout << "no socket" << endl;
     }
@@ -42,11 +29,16 @@ int main() {
     thread client_thread([]{
         this_thread::sleep_for(chrono::milliseconds(350));
         cout << "client: connect to server" << endl;
-        SOCKETLIB_HANDLE client = connect_to_server("127.0.0.1",6111);
+        int err;
+        SOCKETLIB_HANDLE client = create_client((unsigned char*)"127.0.0.1",6111,err);
+        if (client == 0) {
+            cout << "couldn't connect, error: " << err << endl;
+            return;
+        }
+
         this_thread::sleep_for(chrono::milliseconds(300));
         SOCKETLIB_HANDLE recv_buf = create_receive_buffer(client,64);
         char buf[1024];
-        int err;
         if (poll_msg(recv_buf,1000,true)) {
             if (get_msg(recv_buf,(unsigned char*)buf,1024,err)) {
                 cout << "message: " << buf << endl;
@@ -86,7 +78,7 @@ int main() {
 
         this_thread::sleep_for(chrono::milliseconds(1000));
         cout << "client disconnects" << endl;
-        disconnect_socket_and_forget(client);
+        disconnect_socket(client);
         if (poll_msg(recv_buf,1000,true)) {
             if (get_msg(recv_buf,(unsigned char*)buf,1024,err)) {
                 cout << "message: " << buf << endl;
@@ -96,7 +88,7 @@ int main() {
         } else {
             cout << "not received anything" << endl;
         }
-        delete_receive_buffer(recv_buf);
+        //delete_receive_buffer(recv_buf);
 
         /*char buf[1024];
         SOCKETLIB_HANDLE receive_task = receive(client,(unsigned char*)buf,1024);
@@ -118,7 +110,7 @@ int main() {
     char client_addr[1024];
     unsigned short client_port;
     int error;
-    while (!poll_accept(accept_process,100,false)) {
+    while (!poll_accept(accept_process,100,true)) {
         cout << "waiting for connection" << endl;
     }
     if (get_accept_result(accept_process,s_client_socket,(unsigned char*)client_addr,1024,client_port,error)) {
@@ -136,20 +128,24 @@ int main() {
 
 
         cout << "server disconnects" << endl;
-        disconnect_socket_and_forget(socket);
+        //disconnect_socket(socket);
 
-        delete_send_queue(queue);
+        //delete_send_queue(queue);
 
     }
 
-    disconnect_socket_and_forget(socket);
+    //disconnect_socket(socket);
+    //delete_accept(accept_process);
+
     if (client_thread.joinable()) client_thread.join();
+
+    delete_all_socket(0);
 
     /*this_thread::sleep_for(chrono::milliseconds(1500));
 
     disconnect_socket_and_forget(s_client_socket);
 
-    disconnect_socket_and_forget(socket);
+    disconnect_socket(socket);
 
     if (client_thread.joinable()) client_thread.join();*/
 
@@ -186,7 +182,7 @@ SOCKETLIB_HANDLE open_socket(const string& addr, int port, int queue_size) {
 
     if (!listen(sock, queue_size,err)) {
         cout << "Failed to bind socket, Error: " << err << endl;
-        disconnect_socket_and_forget(sock);
+        disconnect_socket(sock);
         return 0;
     }
     cout << "Opened socket: " << sock << endl;

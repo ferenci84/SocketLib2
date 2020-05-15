@@ -1,10 +1,11 @@
 #include "socketlib2.h"
+#include "socketlib2_manage_resources.h"
 
 #include <iostream>
 
 using namespace std;
 
-SOCKETLIB2_API bool __stdcall wsa_startup(int& error) {
+bool wsa_startup(int& error) {
     cout << "WSA startup" << endl;
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 0), &wsaData) != 0) {
@@ -14,7 +15,7 @@ SOCKETLIB2_API bool __stdcall wsa_startup(int& error) {
     return true;
 }
 
-SOCKETLIB2_API bool __stdcall wsa_cleanup(int& error) {
+bool wsa_cleanup(int& error) {
     cout << "WSA cleanup" << endl;
     if (WSACleanup() != 0) {
         error = WSAGetLastError();
@@ -23,23 +24,38 @@ SOCKETLIB2_API bool __stdcall wsa_cleanup(int& error) {
     return true;
 }
 
-SOCKETLIB2_API bool __stdcall stop_receive(SOCKETLIB_HANDLE sock, int& error) {
-    if (shutdown(sock, SD_RECEIVE) == SOCKET_ERROR) {
-        error = WSAGetLastError();
-        return false;
+
+BOOL APIENTRY DllMain( HMODULE hModule,
+                       DWORD  ul_reason_for_call,
+                       LPVOID lpReserved
+)
+{
+    int err;
+    switch (ul_reason_for_call)
+    {
+        case DLL_PROCESS_ATTACH:
+            cout << "attach" << endl;
+            wsa_startup(err);
+            break;
+        case DLL_THREAD_ATTACH:
+            break;
+        case DLL_THREAD_DETACH:
+            break;
+        case DLL_PROCESS_DETACH:
+            cout << "detach" << endl;
+            clean_up();
+            wsa_cleanup(err);
+            break;
     }
-    return true;
+    return TRUE;
 }
 
-SOCKETLIB2_API bool __stdcall stop_send(SOCKETLIB_HANDLE sock, int& error) {
-    if (shutdown(sock, SD_SEND) == SOCKET_ERROR) {
-        error = WSAGetLastError();
-        return false;
-    }
-    return true;
+SOCKETLIB2_API void __stdcall delete_all_socket(int ignored) {
+    clean_up();
 }
 
-SOCKETLIB2_API bool __stdcall stop_send_and_receive(SOCKETLIB_HANDLE sock, int& error) {
+
+bool stop_send_and_receive(SOCKETLIB_HANDLE sock, int& error) {
     if (shutdown(sock, SD_BOTH) == SOCKET_ERROR) {
         error = WSAGetLastError();
         return false;
@@ -47,7 +63,7 @@ SOCKETLIB2_API bool __stdcall stop_send_and_receive(SOCKETLIB_HANDLE sock, int& 
     return true;
 }
 
-SOCKETLIB2_API bool __stdcall close_socket(SOCKETLIB_HANDLE sock, int& error) {
+bool close_socket(SOCKETLIB_HANDLE sock, int& error) {
     if (closesocket(sock) == SOCKET_ERROR) {
         error = WSAGetLastError();
         return false;
@@ -55,10 +71,16 @@ SOCKETLIB2_API bool __stdcall close_socket(SOCKETLIB_HANDLE sock, int& error) {
     return true;
 }
 
-SOCKETLIB2_API void __stdcall disconnect_socket_and_forget(SOCKETLIB_HANDLE sock) {
+SOCKETLIB2_API void __stdcall disconnect_socket(SOCKETLIB_HANDLE sock) {
+    if (!socket_exists(sock)) return;
     int err;
     stop_send_and_receive(sock,err);
     close_socket(sock,err);
+    cout << "socket closed: " << sock << endl;
+    delete_owned_receive_buffer(sock);
+    delete_owned_send_queue(sock);
+    delete_owned_accept_process(sock);
+    remove_socket(sock);
 }
 
 SOCKETLIB2_API SOCKETLIB_HANDLE __stdcall open_socket(int& error) {
@@ -68,6 +90,8 @@ SOCKETLIB2_API SOCKETLIB_HANDLE __stdcall open_socket(int& error) {
         error = WSAGetLastError();
         return 0;
     }
+    cout << "socket opened: " << sock << endl;
+    add_socket(sock);
     return sock;
 }
 
@@ -95,6 +119,27 @@ SOCKETLIB2_API bool __stdcall listen(SOCKETLIB_HANDLE handle, int queue_size, in
     return true;
 }
 
+
+SOCKETLIB2_API SOCKETLIB_HANDLE __stdcall create_server(unsigned char* addr, int port, int queue_size, int& err) {
+    SOCKET sock = open_socket(err);
+    if (sock == 0) {
+        cout << "Failed server socket() call, Error: " << err << endl;
+        return 0;
+    }
+    if (!bind(sock,(unsigned char*)addr,port,err)) {
+        cout << "Failed to bind socket, Error: " << err << endl;
+        disconnect_socket(sock);
+        return 0;
+    }
+    if (!listen(sock, queue_size,err)) {
+        cout << "Failed to listen socket, Error: " << err << endl;
+        disconnect_socket(sock);
+        return 0;
+    }
+    cout << "Opened socket: " << sock << endl;
+    return sock;
+}
+
 SOCKETLIB2_API bool __stdcall connect(SOCKETLIB_HANDLE handle, unsigned char* addr, int port, int& error) {
     SOCKET sock = handle;
 
@@ -112,6 +157,21 @@ SOCKETLIB2_API bool __stdcall connect(SOCKETLIB_HANDLE handle, unsigned char* ad
     cout << "connected to server" << endl;
 
     return true;
+}
+
+SOCKETLIB2_API SOCKETLIB_HANDLE __stdcall create_client(unsigned char* addr, int port, int& error) {
+    SOCKET sock = open_socket(error);
+    if (sock == 0) {
+        cout << "Failed server socket() call, Error: " << error << endl;
+        return 0;
+    }
+    if (!connect(sock, addr,port,error)) {
+        cout << "Failed to listen socket, Error: " << error << endl;
+        disconnect_socket(sock);
+        return 0;
+    }
+    cout << "connected to server" << endl;
+    return sock;
 }
 
 SOCKETLIB2_API bool __stdcall test_sgntr1(int i1, int i2) { return 0; }

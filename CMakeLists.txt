@@ -3,7 +3,7 @@ project(SocketLib2)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_library(SocketLib2 SHARED socketlib2.h socketlib2.cpp socketlib2_accept.cpp socketlib2_send.cpp socketlib2_receive.cpp)
+add_library(SocketLib2 SHARED socketlib2.h socketlib2.cpp socketlib2_accept.cpp socketlib2_send.cpp socketlib2_receive.cpp socketlib2_manage_resources.cpp)
 
 target_precompile_headers(SocketLib2
         PRIVATE <iostream>
