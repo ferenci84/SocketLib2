@@ -95,6 +95,7 @@ SOCKETLIB2_API SOCKETLIB_HANDLE __stdcall open_socket(int& error) {
     return sock;
 }
 
+
 SOCKETLIB2_API bool __stdcall bind(SOCKETLIB_HANDLE handle, unsigned char* addr, int port, int& error) {
     SOCKET sock = handle;
     struct sockaddr_in sockAddr;

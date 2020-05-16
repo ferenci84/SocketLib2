@@ -26,6 +26,7 @@ typedef uint32_t SOCKETLIB_PTR;
 SOCKETLIB2_API void __stdcall delete_all_socket(int ignored);
 
 SOCKETLIB2_API SOCKETLIB_HANDLE __stdcall open_socket(int& error);
+SOCKETLIB2_API SOCKETLIB_HANDLE __stdcall open_socket_dgam(int& error);
 SOCKETLIB2_API void __stdcall disconnect_socket(SOCKETLIB_HANDLE sock);
 //TODO: store allocated resources, and remove them when disconnecting socket
 
@@ -50,5 +51,8 @@ SOCKETLIB2_API SOCKETLIB_HANDLE __stdcall create_receive_buffer(SOCKETLIB_HANDLE
 SOCKETLIB2_API void __stdcall delete_receive_buffer(SOCKETLIB_HANDLE buffer);
 SOCKETLIB2_API bool __stdcall poll_msg(SOCKETLIB_HANDLE buffer, int wait_ms, bool restart);
 SOCKETLIB2_API bool __stdcall get_msg(SOCKETLIB_HANDLE buffer, unsigned char* msg_buf, int buf_size, int& err);
+
+SOCKETLIB2_API int __stdcall send_dgram(SOCKETLIB_HANDLE handle, unsigned char* addr, int port, unsigned char* msg, int& error);
+SOCKETLIB2_API int __stdcall receive_dgram_sync(SOCKETLIB_HANDLE handle, unsigned char* addr, int port, unsigned char* buffer, int bufsize, int& error);
 
 #endif //SOCKETLIB2_SOCKETLIB2_H

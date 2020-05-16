@@ -3,7 +3,7 @@ project(SocketLib2)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_library(SocketLib2 SHARED socketlib2.h socketlib2.cpp socketlib2_accept.cpp socketlib2_send.cpp socketlib2_receive.cpp socketlib2_manage_resources.cpp)
+add_library(SocketLib2 SHARED socketlib2.h socketlib2.cpp socketlib2_accept.cpp socketlib2_send.cpp socketlib2_receive.cpp socketlib2_manage_resources.cpp socketlib2_dgram.cpp)
 
 target_precompile_headers(SocketLib2
         PRIVATE <iostream>
@@ -13,10 +13,16 @@ target_precompile_headers(SocketLib2
         )
 
 add_executable(test test.cpp)
+add_executable(testdgram testdgram.cpp)
 
 target_link_libraries(SocketLib2 ws2_32)
+
 target_link_libraries(test SocketLib2)
 target_link_libraries(test ws2_32)
+
+target_link_libraries(testdgram SocketLib2)
+target_link_libraries(testdgram ws2_32)
+
 
 add_custom_command(TARGET SocketLib2 POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:SocketLib2> E:\\\\dynamicprogrammingsolutions\\mt4600_experts\\MQL4\\Libraries\\
