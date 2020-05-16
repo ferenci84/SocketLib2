@@ -27,11 +27,13 @@ SOCKETLIB2_API void __stdcall delete_accept(SOCKETLIB_HANDLE accept_handle) {
     delete accept;
 }
 SOCKETLIB2_API bool __stdcall poll_accept(SOCKETLIB_HANDLE accept_handle, int wait_for, bool restart) {
+    if (!accept_process_exists(accept_handle)) return true;
     auto accept = (accept_connections*)accept_handle;
     return accept->poll_accept(wait_for, restart);
 }
 
 SOCKETLIB2_API bool __stdcall get_accept_result(SOCKETLIB_HANDLE accept_handle, SOCKETLIB_HANDLE& client_sock, unsigned char* addr_buf, unsigned int addr_buf_size, unsigned short& port, int& error) {
+    if (!accept_process_exists(accept_handle)) { error = 12000; return true; }
     auto accept = (accept_connections*)accept_handle;
     string addr;
     bool succ = accept->get_last_result(client_sock, addr, port, error);

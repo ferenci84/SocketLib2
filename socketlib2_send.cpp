@@ -29,11 +29,13 @@ SOCKETLIB2_API void __stdcall delete_send_queue(SOCKETLIB_HANDLE queue_handle) {
 }
 
 SOCKETLIB2_API void __stdcall send_msg(SOCKETLIB_HANDLE queue_handle, unsigned char* msg) {
+    if (!send_queue_exists(queue_handle)) return;
     auto queue = (send_queue*)queue_handle;
     queue->send_msg(string((char*)msg));
 }
 
 SOCKETLIB2_API int __stdcall get_queue_error(SOCKETLIB_HANDLE queue_handle) {
+    if (!send_queue_exists(queue_handle)) return 12000;
     auto queue = (send_queue*)queue_handle;
     return queue->get_last_error();
 }

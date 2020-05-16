@@ -88,7 +88,7 @@ public:
         return res;
     }
     bool poll_msg(int wait_for, bool restart = true) {
-        if (!this->is_connected()) return false;
+        //if (!this->is_connected()) return false;
         bool start_task = false;
         if (!future_in_progress) {
             cout << "starting recv task" << endl;
