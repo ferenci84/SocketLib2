@@ -23,14 +23,18 @@ typedef uint32_t SOCKETLIB_HANDLE;
 typedef uint32_t SOCKETLIB_PTR;
 #endif
 
+bool close_socket(SOCKETLIB_HANDLE sock, int& error);
+
 SOCKETLIB2_API void __stdcall delete_all_socket(int ignored);
 
 SOCKETLIB2_API SOCKETLIB_HANDLE __stdcall open_socket(int& error);
-SOCKETLIB2_API SOCKETLIB_HANDLE __stdcall open_socket_dgam(int& error);
+SOCKETLIB2_API SOCKETLIB_HANDLE __stdcall open_socket_dgam_for_send(int& error);
+SOCKETLIB2_API SOCKETLIB_HANDLE __stdcall open_socket_dgam_for_receive(int& error);
 SOCKETLIB2_API void __stdcall disconnect_socket(SOCKETLIB_HANDLE sock);
 //TODO: store allocated resources, and remove them when disconnecting socket
 
 SOCKETLIB2_API bool __stdcall bind(SOCKETLIB_HANDLE handle, unsigned char* addr, int port, int& error);
+SOCKETLIB2_API bool __stdcall bind_any(SOCKETLIB_HANDLE handle, int port, int& error);
 SOCKETLIB2_API bool __stdcall listen(SOCKETLIB_HANDLE handle, int queue_size, int& error);
 SOCKETLIB2_API SOCKETLIB_HANDLE __stdcall create_server(unsigned char* addr, int port, int queue_size, int& err);
 
@@ -54,5 +58,6 @@ SOCKETLIB2_API bool __stdcall get_msg(SOCKETLIB_HANDLE buffer, unsigned char* ms
 
 SOCKETLIB2_API int __stdcall send_dgram(SOCKETLIB_HANDLE handle, unsigned char* addr, int port, unsigned char* msg, int& error);
 SOCKETLIB2_API int __stdcall receive_dgram_sync(SOCKETLIB_HANDLE handle, unsigned char* addr, int port, unsigned char* buffer, int bufsize, int& error);
+SOCKETLIB2_API int __stdcall send_dgram_broadcast(SOCKETLIB_HANDLE handle, int port, unsigned char* msg, int& error);
 
 #endif //SOCKETLIB2_SOCKETLIB2_H

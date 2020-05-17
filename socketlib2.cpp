@@ -111,6 +111,21 @@ SOCKETLIB2_API bool __stdcall bind(SOCKETLIB_HANDLE handle, unsigned char* addr,
     return true;
 }
 
+SOCKETLIB2_API bool __stdcall bind_any(SOCKETLIB_HANDLE handle, int port, int& error) {
+    SOCKET sock = handle;
+    struct sockaddr_in sockAddr;
+    sockAddr.sin_family = AF_INET;
+    sockAddr.sin_port = htons(port);
+    //TODO: remove logs
+    cout << "bind address: " << " port " << port << endl;
+    sockAddr.sin_addr.s_addr = INADDR_ANY;
+    if (::bind(sock, (struct sockaddr*) & sockAddr, sizeof(sockAddr)) == SOCKET_ERROR) {
+        error = WSAGetLastError();
+        return false;
+    }
+    return true;
+}
+
 SOCKETLIB2_API bool __stdcall listen(SOCKETLIB_HANDLE handle, int queue_size, int& error) {
     SOCKET sock = handle;
     if (listen(sock, queue_size) != 0) {
