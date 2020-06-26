@@ -32,6 +32,7 @@ SOCKETLIB2_API void __stdcall send_msg(SOCKETLIB_HANDLE queue_handle, unsigned c
     if (!send_queue_exists(queue_handle)) return;
     auto queue = (send_queue*)queue_handle;
     queue->send_msg(string((char*)msg));
+    queue->wait();
 }
 
 SOCKETLIB2_API int __stdcall get_queue_error(SOCKETLIB_HANDLE queue_handle) {

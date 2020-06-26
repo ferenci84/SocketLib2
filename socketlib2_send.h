@@ -77,6 +77,8 @@ private:
         buffer_pos = 0;
         return succ;
     }
+
+public:
     bool send_msg_sync(const char* msg, unsigned int msg_size) {
         for(const char* it = msg; it != msg+msg_size; ++it){
             if (!send_char(*it)) {
@@ -85,7 +87,6 @@ private:
         }
         return flush();
     }
-public:
     void send_msg_proc(shared_ptr<thread> old_thread) {
         if (old_thread != nullptr && old_thread->joinable()) old_thread->join();
         while(true) {
@@ -98,11 +99,19 @@ public:
             }
         }
     }
+    bool send_msg_sync(const string& msg) {
+        auto msg_cpy = msg;
+        int msg_size = msg.size()+1;
+        return send_msg_sync(msg_cpy.c_str(),msg_size);
+    }
     bool send_msg(const string& msg) {
         if (msgs.size() >= max_size) return false;
         msgs.push_back(msg);
         th = std::make_shared<thread>(&send_queue::send_msg_proc,this,th);
         return true;
+    }
+    void wait() {
+        if (th->joinable()) th->join();
     }
     int get_last_error() {
         return this->lasterror;

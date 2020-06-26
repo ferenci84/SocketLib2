@@ -92,10 +92,10 @@ SOCKETLIB2_API int __stdcall send_dgram_broadcast(SOCKETLIB_HANDLE handle, int p
 SOCKETLIB2_API int __stdcall receive_dgram_sync(SOCKETLIB_HANDLE handle, unsigned char* addr, int port, unsigned char* buffer, int bufsize, int& error) {
     SOCKET sock = handle;
     struct sockaddr_in sockAddr;
-    /*sockAddr.sin_family = AF_INET;
+    sockAddr.sin_family = AF_INET;
     sockAddr.sin_port = htons(port);
     cout << "receive from address: " << ((char*)addr) << " port " << port << endl;
-    sockAddr.sin_addr.s_addr = inet_addr((char*)addr);*/
+    sockAddr.sin_addr.s_addr = inet_addr((char*)addr);
     int fromlen = sizeof(sockAddr);
     cout << "start receiving" << endl;
     int ret = recvfrom(sock,(char*)buffer,bufsize,0,(struct sockaddr*) & sockAddr,&fromlen);
